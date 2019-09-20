@@ -12,10 +12,10 @@
 
 ### 상세 교육내용
 - 데이터 과학 소개 및 시각화
--- Anaconda, IPython, Jupyter notebook, matplotlib
+  - Anaconda, IPython, Jupyter notebook, matplotlib
 - 빅데이터 분석도구 활용 기술
--- Numpy, Pandas
+  - Numpy, Pandas
 - 머신러닝 기반 빅데이터 분석
--- 분류, 모델 훈련
+  - 분류, 모델 훈련
 - 데이터 수집 및 분석 응용
--- 웹크롤링, 지리정보 시각화
+  - 웹크롤링, 지리정보 시각화
