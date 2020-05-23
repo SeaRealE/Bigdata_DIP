@@ -14,6 +14,15 @@ import numpy as np
 
 import collections
 
+import folium
+import folium.plugins as plugins
+import os
+
+
+style.use('seaborn-talk')
+krfont = {'family':'NanumGothic','weight':'bold','size':10}
+matplotlib.rc('font',**krfont)
+matplotlib.rcParams['axes.unicode_minus']=False
 
 # 클러스터링 결과 표시
 def plotResult(X,y,data,title="클러스터링 결과"):
@@ -48,6 +57,37 @@ data_var = pd.concat([cctv])
 # data_var = pd.concat([private])
 # data_var = pd.concat([public])
 # data_var
+
+# 지도 마커 그룹 생성
+# 버스정류장, 소방서, 경찰서, 관공서, CCTV, 민공영주차장
+add_cctv = folium.FeatureGroup(name='cctv')
+for i in range(len(cctv)) :
+    folium.Marker([cctv.iat[i,1], cctv.iat[i,2]], color = 'blue', popup='cctv').add_to(add_cctv)
+
+add_bus = folium.FeatureGroup(name='bus_stop')
+for i in range(len(bus)) :
+    folium.Marker([bus.iat[i,1], bus.iat[i,2]], color = 'green', popup='bus').add_to(add_bus)
+
+add_co = folium.FeatureGroup(name='community')
+for i in range(len(co)) :
+    folium.Marker([co.iat[i,1], co.iat[i,2]], color = 'yellow', popup='co').add_to(add_co)
+
+add_police = folium.FeatureGroup(name='police')
+for i in range(len(police)) :
+    folium.Marker([police.iat[i,1], police.iat[i,2]], color = 'yellow', popup='police').add_to(add_police)
+
+add_fire = folium.FeatureGroup(name='fire')
+for i in range(len(fire)) :
+    folium.Marker([fire.iat[i,1], fire.iat[i,2]], color = 'yellow', popup='fire').add_to(add_fire)
+
+add_private = folium.FeatureGroup(name='private')
+for i in range(len(private)) :
+    folium.Marker([private.iat[i,1], private.iat[i,2]], color = 'black', popup='private').add_to(add_private)
+
+add_public =folium.FeatureGroup(name='public')
+for i in range(len(public)) :
+    folium.Marker([public.iat[i,1], public.iat[i,2]], color = 'black', popup='public').add_to(add_public)
+
 
 # 이상치 제거
 lat_mean = data_var['Latitude'].mean()
@@ -180,10 +220,64 @@ for i in range(0,len_set):
     lat = 0
     lon = 0
 
-# 이상치 제거
+# 클러스터 인덱스값 -1 로 인한 이상치  
 final_data2 = np.delete(final_data,1359, axis=0)
 
 # 주요 변수 위치 비교
 plt.scatter(final_data2[:,0],final_data2[:,1], c='black',marker='s', s=40)
 plt.scatter(data_list[:,0],data_list[:,1], c='red',marker='s', s=40)
 plt.show()
+
+
+# DBSCAN로 나온 클러스터마다 위치 평균값 + 해당 클러스터 내 데이터 수 
+output = pd.DataFrame(final_data2.reshape(len(final_data2),2), columns=['lat','lon'])
+output.to_csv("output.csv")
+#output
+
+dbscan_count = pd.DataFrame(collections.Counter(y_db).items())
+dbscan_count = dbscan_count.set_index(0)
+# 클러스터 인덱스값 -1 삭제 
+dbscan_count = dbscan_count.drop([-1])
+dbscan_count.columns = ['freq']
+
+final_output = pd.merge(output,dbscan_count, how="outer",left_index=True, right_index=True)
+final_output
+
+
+### 히트맵
+data_1 = final_output
+data_1 = data_1[['freq', 'lat', 'lon']]
+
+arr = np.empty((0, 2), int)
+
+for i in range(len(data_1)) :    
+    loc = [data_1.iat[i,1],data_1.iat[i,2]]
+    freq = int(data_1.iat[i,0])
+    
+    if freq > 0 :
+        arr = np.append(arr, np.array([loc]*freq), axis = 0)               
+
+visual = arr
+Map = folium.Map([data['lat'].mean(), data['lon'].mean()], zoom_start=11)
+
+high_95 = folium.FeatureGroup(name='high_0.95')
+plugins.HeatMap(visual).add_to(high_95)
+Map.add_child(high_95)
+Map.add_child(add_cctv)
+Map.add_child(add_bus)
+Map.add_child(add_police)
+Map.add_child(add_fire)
+Map.add_child(add_co)
+Map.add_child(add_public)
+Map.add_child(add_private)
+
+folium.LayerControl(collapsed=False).add_to(Map)
+
+Map.save(os.path.join('result', 'DBSCAN.html'))
+
+
+
+
+
+
+
