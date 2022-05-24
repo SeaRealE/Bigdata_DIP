@@ -1,4 +1,4 @@
-# Bigdata_DIP
+# bigdata_traning_course_DIP
 빅데이터 전문가 육성과정
 
 ### 운영주체
